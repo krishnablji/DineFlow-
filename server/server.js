@@ -27,22 +27,45 @@ const server = http.createServer(app);
 // Connect to MongoDB
 connectDB();
 
-// CORS Configuration
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'http://127.0.0.1:5173',
-  process.env.CLIENT_URL,
-].filter(Boolean);
+// CORS Origin Resolver for Localhost, LAN devices, Vercel, and Render deployments
+const isOriginAllowed = (origin) => {
+  if (!origin) return true; // Mobile apps, curl, server-to-server
+
+  // Local development hostnames
+  if (
+    origin.includes('localhost') ||
+    origin.includes('127.0.0.1') ||
+    origin.endsWith('.vercel.app') ||
+    origin.endsWith('.onrender.com')
+  ) {
+    return true;
+  }
+
+  // Local Area Network (LAN) IP patterns (e.g. 192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+  const lanPattern = /^https?:\/\/(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/;
+  if (lanPattern.test(origin)) {
+    return true;
+  }
+
+  if (process.env.CLIENT_URL && origin === process.env.CLIENT_URL) {
+    return true;
+  }
+
+  // In development, allow all origins
+  if (process.env.NODE_ENV !== 'production') {
+    return true;
+  }
+
+  return false;
+};
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, or Postman)
-      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      if (isOriginAllowed(origin)) {
         callback(null, true);
       } else {
-        callback(null, true); // Permissive in development/demo mode
+        callback(null, true); // Permissive for easy demo setup
       }
     },
     credentials: true,
@@ -56,14 +79,31 @@ app.use(express.urlencoded({ extended: true }));
 // Initialize Socket.io
 const io = new Server(server, {
   cors: {
-    origin: '*',
+    origin: (origin, callback) => {
+      if (isOriginAllowed(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, true);
+      }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true,
   },
 });
 
 initSocketHandler(io);
 
-// API Health Check & Welcome
+// Render Keep-Alive & Health Ping Route
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    message: 'DineFlow Backend & Socket.io Server Active',
+  });
+});
+
+// API Root Information
 app.get('/', (req, res) => {
   res.json({
     message: '🍽️ DineFlow REST API & Real-Time Engine Active',
