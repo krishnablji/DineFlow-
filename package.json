@@ -1,0 +1,28 @@
+{
+  "name": "dineflow-monorepo",
+  "version": "1.0.0",
+  "description": "DineFlow — Full-Stack Real-Time Restaurant POS, Table Management, and Dine-In Order Scheduling SaaS",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "seed": "cd server && npm run seed",
+    "install-all": "npm install && cd server && npm install && cd ../client && npm install",
+    "build": "cd client && npm run build"
+  },
+  "keywords": [
+    "restaurant-pos",
+    "table-management",
+    "real-time",
+    "mern",
+    "socket-io",
+    "razorpay",
+    "saas"
+  ],
+  "author": "DineFlow Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
