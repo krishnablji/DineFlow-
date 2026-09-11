@@ -24,10 +24,19 @@ const seedData = async () => {
     await Order.deleteMany();
 
     console.log('[Seeder] Seeding Users...');
-    // Demo accounts
+    // Retail Demo accounts
     const users = await User.create([
       {
         name: 'Elena Vance (General Manager)',
+        email: 'manager@dineflow.com',
+        password: 'password123',
+        role: 'manager',
+        isVerified: true,
+        avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
+        phone: '+1 555-0199',
+      },
+      {
+        name: 'Elena Vance (Admin Alias)',
         email: 'admin@dineflow.com',
         password: 'password123',
         role: 'manager',
@@ -36,43 +45,22 @@ const seedData = async () => {
         phone: '+1 555-0199',
       },
       {
-        name: 'Alex Rivera (Senior Waiter)',
+        name: 'Marco Bellini (Kitchen Head)',
+        email: 'kitchen@dineflow.com',
+        password: 'password123',
+        role: 'kitchen',
+        isVerified: true,
+        avatar: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=200&q=80',
+        phone: '+1 555-0177',
+      },
+      {
+        name: 'Alex Rivera (Floor Waiter)',
         email: 'waiter@dineflow.com',
         password: 'password123',
         role: 'waiter',
         isVerified: true,
         avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
         phone: '+1 555-0144',
-        assignedTables: [1, 2, 3, 4, 5, 6, 7, 8],
-      },
-      {
-        name: 'Marcus Brody (Trainee Waiter)',
-        email: 'marcus@dineflow.com',
-        password: 'password123',
-        role: 'waiter',
-        isVerified: false, // Pending verification queue
-        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
-        phone: '+1 555-0182',
-        assignedTables: [],
-      },
-      {
-        name: 'Sophia Chen (Junior Waitstaff)',
-        email: 'sophia@dineflow.com',
-        password: 'password123',
-        role: 'waiter',
-        isVerified: false, // Pending verification queue
-        avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
-        phone: '+1 555-0131',
-        assignedTables: [],
-      },
-      {
-        name: 'David Miller (Demo Customer)',
-        email: 'customer@dineflow.com',
-        password: 'password123',
-        role: 'customer',
-        isVerified: true,
-        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
-        phone: '+1 555-0112',
       },
     ]);
 

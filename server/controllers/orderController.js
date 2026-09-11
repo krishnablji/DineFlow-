@@ -1,130 +1,115 @@
 const Order = require('../models/Order');
-const Table = require('../models/Table');
-const { emitNewOrder, emitOrderStatusUpdate } = require('../sockets/socketHandler');
+const TableOrderCounter = require('../models/TableOrderCounter');
+const MenuItem = require('../models/MenuItem');
+const { emitNewOrder, emitOrderReady, emitOrderSettled } = require('../sockets/socketHandler');
 
-// Helper to generate unique order number e.g. DF-2026-8491
-const generateOrderNumber = () => {
-  const randomNum = Math.floor(1000 + Math.random() * 9000);
-  return `DF-${randomNum}`;
+// Helper to get today's date string YYYY-MM-DD in local time
+const getTodayDateString = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
-// @desc    Create a new order (from customer dine-in checkout)
+// @desc    Create a new order from Waiter Tablet
 // @route   POST /api/orders
-// @access  Public / Customer
+// @access  Private / Waiter / Staff
 const createOrder = async (req, res, next) => {
   try {
     const {
       tableNumber,
       items,
-      subtotal,
-      tax = 0,
-      serviceFee = 0,
-      totalAmount,
-      customerName = 'Guest Customer',
-      customerPhone = '',
-      paymentStatus = 'paid',
-      paymentMethod = 'razorpay',
-      razorpayOrderId = '',
-      razorpayPaymentId = '',
-      priority = 'normal',
-      scheduledTime = 'Immediate',
-      estimatedPrepTimeMinutes = 20,
+      waiterName = 'Floor Staff',
     } = req.body;
 
-    if (!tableNumber || !items || items.length === 0) {
+    if (!tableNumber || !items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Order must have a valid table number and at least one item.',
+        message: 'Order must specify a valid table number and at least one item.',
       });
     }
 
-    const orderNumber = generateOrderNumber();
-    const customerId = req.user ? req.user._id : null;
+    const tNum = Number(tableNumber);
+    const today = getTodayDateString();
+
+    // 1. Atomic sequential counter per table for today
+    const counter = await TableOrderCounter.findOneAndUpdate(
+      { tableNumber: tNum, date: today },
+      { $inc: { seq: 1 } },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    // Format: T04-#01
+    const orderNumber = `T${String(tNum).padStart(2, '0')}-#${String(counter.seq).padStart(2, '0')}`;
+
+    // 2. Validate items & compute server-side totals
+    const processedItems = items.map((item) => {
+      const price = Number(item.price) || 0;
+      const quantity = Math.max(1, Number(item.quantity) || 1);
+      return {
+        menuItemId: item.menuItemId || item._id,
+        name: item.name,
+        price,
+        quantity,
+        kitchenNote: (item.kitchenNote || '').trim(),
+        specialInstructions: (item.kitchenNote || '').trim(),
+        itemTotal: price * quantity,
+      };
+    });
+
+    const subtotal = processedItems.reduce((sum, item) => sum + item.itemTotal, 0);
+    const tax = Math.round(subtotal * 0.05); // 5% GST standard
+    const totalAmount = subtotal + tax;
 
     const initialTimeline = [
       {
         status: 'placed',
         timestamp: new Date(),
-        note: `Order placed for Table #${tableNumber}`,
-        updatedBy: customerName || 'Customer',
+        note: `Order placed for Table #${tNum}`,
+        updatedBy: req.user ? req.user.name : waiterName,
       },
     ];
 
     const order = await Order.create({
       orderNumber,
-      tableNumber: Number(tableNumber),
-      customerId,
-      customerName: req.user ? req.user.name : customerName,
-      customerPhone: req.user ? req.user.phone : customerPhone,
-      items,
-      subtotal: Number(subtotal),
-      tax: Number(tax),
-      serviceFee: Number(serviceFee),
-      totalAmount: Number(totalAmount),
-      paymentStatus,
-      paymentMethod,
-      razorpayOrderId,
-      razorpayPaymentId,
+      tableNumber: tNum,
+      waiterId: req.user ? req.user._id : null,
+      waiterName: req.user ? req.user.name : waiterName,
+      items: processedItems,
+      subtotal,
+      tax,
+      totalAmount,
+      paymentStatus: 'pending',
       servingStatus: 'placed',
-      priority,
-      scheduledTime,
       timeline: initialTimeline,
-      estimatedPrepTimeMinutes,
     });
 
-    // Update table status to occupied and link active order
-    await Table.findOneAndUpdate(
-      { tableNumber: Number(tableNumber) },
-      { status: 'occupied', currentOrderId: order._id }
-    );
-
-    // Broadcast new order to Kitchen & Manager via Socket.io
+    // 3. Broadcast to Kitchen & Manager
     emitNewOrder(order);
 
     res.status(201).json({
       success: true,
+      message: `Order ${orderNumber} placed successfully!`,
       data: order,
-      message: `Order #${order.orderNumber} placed successfully!`,
     });
   } catch (error) {
-    next(error);
+    console.error('[createOrder error]:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server error creating order',
+    });
   }
 };
 
-// @desc    Get all orders with optional status, table, or priority filters
-// @route   GET /api/orders
-// @access  Public / Staff / Manager
-const getOrders = async (req, res, next) => {
+// @desc    Get active orders for Kitchen & Waiter displays
+// @route   GET /api/orders/active
+// @access  Private (Staff)
+const getActiveOrders = async (req, res, next) => {
   try {
-    const { status, tableNumber, priority, todayOnly, limit = 50 } = req.query;
-    const query = {};
-
-    if (status && status !== 'All') {
-      if (status.includes(',')) {
-        query.servingStatus = { $in: status.split(',') };
-      } else {
-        query.servingStatus = status;
-      }
-    }
-
-    if (tableNumber) {
-      query.tableNumber = Number(tableNumber);
-    }
-
-    if (priority) {
-      query.priority = priority;
-    }
-
-    if (todayOnly === 'true') {
-      const startOfDay = new Date();
-      startOfDay.setHours(0, 0, 0, 0);
-      query.createdAt = { $gte: startOfDay };
-    }
-
-    const orders = await Order.find(query)
-      .sort({ createdAt: -1 })
-      .limit(Number(limit))
-      .populate('customerId', 'name email phone avatar');
+    const orders = await Order.find({
+      servingStatus: { $in: ['placed', 'prepping', 'ready'] },
+    }).sort({ createdAt: 1 }); // FIFO queue
 
     res.status(200).json({
       success: true,
@@ -136,151 +121,114 @@ const getOrders = async (req, res, next) => {
   }
 };
 
-// @desc    Get single order by ID or orderNumber
-// @route   GET /api/orders/:id
-// @access  Public
-const getOrderById = async (req, res, next) => {
+// @desc    Mark order as Ready / Start Delivery (Kitchen single-action)
+// @route   PATCH /api/orders/:id/ready
+// @access  Private (Kitchen / Manager)
+const markOrderReady = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    let order;
-
-    if (id.startsWith('DF-')) {
-      order = await Order.findOne({ orderNumber: id }).populate('customerId', 'name email phone');
-    } else {
-      order = await Order.findById(id).populate('customerId', 'name email phone');
-    }
+    const order = await Order.findById(req.params.id);
 
     if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: 'Order not found.',
-      });
+      return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    res.status(200).json({
-      success: true,
-      data: order,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// @desc    Get active order for a table
-// @route   GET /api/orders/table/:tableNumber/active
-// @access  Public
-const getActiveTableOrder = async (req, res, next) => {
-  try {
-    const { tableNumber } = req.params;
-
-    const order = await Order.findOne({
-      tableNumber: Number(tableNumber),
-      servingStatus: { $in: ['placed', 'prepping', 'ready'] },
-    }).sort({ createdAt: -1 });
-
-    if (!order) {
-      return res.status(200).json({
-        success: true,
-        data: null,
-        message: `No active pending order for Table #${tableNumber}.`,
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      data: order,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// @desc    Update serving milestone status (Kanban drag / 1-click advance)
-// @route   PUT /api/orders/:id/status
-// @access  Public / Staff / Manager
-const updateOrderStatus = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { status, note, waiterName } = req.body;
-
-    const validStatuses = ['placed', 'prepping', 'ready', 'served', 'cancelled'];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
-      });
-    }
-
-    let order = await Order.findById(id);
-
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: 'Order not found.',
-      });
-    }
-
-    order.servingStatus = status;
-
-    // Add milestone to timeline
+    order.servingStatus = 'ready';
     order.timeline.push({
-      status,
+      status: 'ready',
       timestamp: new Date(),
-      note: note || `Serving milestone advanced to ${status.toUpperCase()}`,
-      updatedBy: waiterName || (req.user ? req.user.name : 'Kitchen Staff'),
+      note: 'Kitchen marked order ready for delivery',
+      updatedBy: req.user ? req.user.name : 'Kitchen Head',
     });
-
-    // If served or cancelled, free up table
-    if (status === 'served' || status === 'cancelled') {
-      await Table.findOneAndUpdate(
-        { tableNumber: order.tableNumber },
-        { status: 'available', currentOrderId: null }
-      );
-    }
 
     await order.save();
 
-    // Broadcast updated order to all parties via Socket.io
-    emitOrderStatusUpdate(order);
+    // Broadcast ready alert to all waiter tablets
+    emitOrderReady(order);
 
     res.status(200).json({
       success: true,
+      message: `Order ${order.orderNumber} is marked Ready for Delivery!`,
       data: order,
-      message: `Order #${order.orderNumber} status updated to ${status}.`,
     });
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Update order priority (Normal / Urgent / Scheduled)
-// @route   PUT /api/orders/:id/priority
-// @access  Public / Staff / Manager
-const updateOrderPriority = async (req, res, next) => {
+// @desc    Settle / Pay order (Waiter/Manager)
+// @route   PATCH /api/orders/:id/settle
+// @access  Private (Waiter / Manager)
+const settleOrder = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const { priority } = req.body;
-
-    const order = await Order.findByIdAndUpdate(
-      id,
-      { priority },
-      { new: true, runValidators: true }
-    );
+    const { paymentMethod = 'cash' } = req.body;
+    const order = await Order.findById(req.params.id);
 
     if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: 'Order not found.',
-      });
+      return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    emitOrderStatusUpdate(order);
+    order.servingStatus = 'settled';
+    order.paymentStatus = 'paid';
+    order.timeline.push({
+      status: 'settled',
+      timestamp: new Date(),
+      note: `Settled via ${paymentMethod}`,
+      updatedBy: req.user ? req.user.name : 'Staff',
+    });
+
+    await order.save();
+    emitOrderSettled(order);
 
     res.status(200).json({
       success: true,
+      message: `Order ${order.orderNumber} settled successfully.`,
       data: order,
-      message: `Order #${order.orderNumber} priority changed to ${priority}.`,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get all orders (with optional table or today filter)
+// @route   GET /api/orders
+// @access  Private
+const getOrders = async (req, res, next) => {
+  try {
+    const { tableNumber, todayOnly } = req.query;
+    const filter = {};
+
+    if (tableNumber) {
+      filter.tableNumber = Number(tableNumber);
+    }
+
+    if (todayOnly === 'true') {
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      filter.createdAt = { $gte: startOfToday };
+    }
+
+    const orders = await Order.find(filter).sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: orders.length,
+      data: orders,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get single order by ID
+// @route   GET /api/orders/:id
+// @access  Public / Staff
+const getOrderById = async (req, res, next) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+    res.status(200).json({ success: true, data: order });
   } catch (error) {
     next(error);
   }
@@ -288,9 +236,9 @@ const updateOrderPriority = async (req, res, next) => {
 
 module.exports = {
   createOrder,
+  getActiveOrders,
+  markOrderReady,
+  settleOrder,
   getOrders,
   getOrderById,
-  getActiveTableOrder,
-  updateOrderStatus,
-  updateOrderPriority,
 };

@@ -27,15 +27,12 @@ const UserSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['customer', 'waiter', 'manager'],
-      default: 'customer',
+      enum: ['waiter', 'kitchen', 'manager'],
+      default: 'waiter',
     },
     isVerified: {
       type: Boolean,
-      default: function () {
-        // Customers and Managers are auto-verified; Waiters need manager approval queue
-        return this.role !== 'waiter';
-      },
+      default: true,
     },
     avatar: {
       type: String,
@@ -45,11 +42,6 @@ const UserSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
-    assignedTables: [
-      {
-        type: Number,
-      },
-    ],
   },
   {
     timestamps: true,

@@ -20,16 +20,10 @@ const OrderItemSchema = new mongoose.Schema({
     min: 1,
     default: 1,
   },
-  spiceLevel: {
+  kitchenNote: {
     type: String,
-    default: 'Medium',
+    default: '',
   },
-  addons: [
-    {
-      name: String,
-      price: Number,
-    },
-  ],
   specialInstructions: {
     type: String,
     default: '',
@@ -43,7 +37,7 @@ const OrderItemSchema = new mongoose.Schema({
 const OrderTimelineSchema = new mongoose.Schema({
   status: {
     type: String,
-    enum: ['placed', 'prepping', 'ready', 'served', 'cancelled'],
+    enum: ['placed', 'prepping', 'ready', 'served', 'settled', 'cancelled'],
     required: true,
   },
   timestamp: {
@@ -56,7 +50,7 @@ const OrderTimelineSchema = new mongoose.Schema({
   },
   updatedBy: {
     type: String,
-    default: 'System',
+    default: 'Staff',
   },
 });
 
@@ -65,29 +59,20 @@ const OrderSchema = new mongoose.Schema(
     orderNumber: {
       type: String,
       required: true,
-      unique: true,
+      unique: true, // Formatted as T04-#01
     },
     tableNumber: {
       type: Number,
       required: [true, 'Table number is required'],
     },
-    customerId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      default: null,
-    },
-    customerName: {
-      type: String,
-      default: 'Guest Customer',
-    },
-    customerPhone: {
-      type: String,
-      default: '',
-    },
     waiterId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       default: null,
+    },
+    waiterName: {
+      type: String,
+      default: 'Floor Staff',
     },
     items: [OrderItemSchema],
     subtotal: {
@@ -98,51 +83,21 @@ const OrderSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    serviceFee: {
-      type: Number,
-      default: 0,
-    },
     totalAmount: {
       type: Number,
       required: true,
     },
     paymentStatus: {
       type: String,
-      enum: ['pending', 'paid', 'failed', 'cash_on_delivery'],
+      enum: ['pending', 'paid', 'cash', 'card', 'upi'],
       default: 'pending',
-    },
-    paymentMethod: {
-      type: String,
-      enum: ['razorpay', 'cash', 'card', 'demo_simulator'],
-      default: 'razorpay',
-    },
-    razorpayOrderId: {
-      type: String,
-      default: '',
-    },
-    razorpayPaymentId: {
-      type: String,
-      default: '',
     },
     servingStatus: {
       type: String,
-      enum: ['placed', 'prepping', 'ready', 'served', 'cancelled'],
+      enum: ['placed', 'prepping', 'ready', 'served', 'settled', 'cancelled'],
       default: 'placed',
     },
-    priority: {
-      type: String,
-      enum: ['normal', 'urgent', 'scheduled'],
-      default: 'normal',
-    },
-    scheduledTime: {
-      type: String, // e.g. "Immediate", "19:30", "20:00"
-      default: 'Immediate',
-    },
     timeline: [OrderTimelineSchema],
-    estimatedPrepTimeMinutes: {
-      type: Number,
-      default: 20,
-    },
   },
   {
     timestamps: true,

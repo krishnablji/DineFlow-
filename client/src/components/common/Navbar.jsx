@@ -74,34 +74,34 @@ const Navbar = () => {
           {/* Desktop Navigation Links */}
           <div className="hidden md:flex items-center gap-1 bg-dark-800/80 p-1 rounded-xl border border-dark-700">
             <Link
-              to="/menu"
+              to="/waiter"
               className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                location.pathname === '/menu'
-                  ? 'bg-gold-500 text-dark-900 shadow-glow'
+                location.pathname === '/waiter'
+                  ? 'bg-amber-500 text-dark-900 font-bold shadow-glow'
                   : 'text-slate-300 hover:text-white hover:bg-dark-700'
               }`}
             >
               <UtensilsCrossed className="w-3.5 h-3.5" />
-              <span>Digital Menu</span>
+              <span>Waiter Tablet</span>
             </Link>
 
             <Link
               to="/kitchen"
               className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 location.pathname === '/kitchen'
-                  ? 'bg-emerald-500 text-dark-900 shadow-glow-emerald'
+                  ? 'bg-emerald-500 text-dark-900 font-bold shadow-glow-emerald'
                   : 'text-slate-300 hover:text-white hover:bg-dark-700'
               }`}
             >
               <ChefHat className="w-3.5 h-3.5" />
-              <span>Kitchen Dispatch</span>
+              <span>Kitchen KDS</span>
             </Link>
 
             <Link
               to="/manager"
               className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 location.pathname === '/manager'
-                  ? 'bg-blue-500 text-white'
+                  ? 'bg-blue-500 text-white font-bold'
                   : 'text-slate-300 hover:text-white hover:bg-dark-700'
               }`}
             >

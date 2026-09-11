@@ -12,13 +12,8 @@ export const menuApi = {
   getMenuItems: (params) => axiosClient.get('/menu', { params }),
   getMenuItemById: (id) => axiosClient.get(`/menu/${id}`),
   getCategories: () => axiosClient.get('/menu/categories/all'),
-  createMenuItem: (dishData) => axiosClient.post('/menu', dishData),
-  updateMenuItem: (id, dishData) => axiosClient.put(`/menu/${id}`, dishData),
-  deleteMenuItem: (id) => axiosClient.delete(`/menu/${id}`),
-  uploadMedia: (formData) =>
-    axiosClient.post('/menu/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+  toggleStock: (id, isAvailable) =>
+    axiosClient.patch(`/menu/${id}/stock`, { isAvailable }),
 };
 
 export const tableApi = {
@@ -33,13 +28,11 @@ export const tableApi = {
 export const orderApi = {
   createOrder: (orderData) => axiosClient.post('/orders', orderData),
   getOrders: (params) => axiosClient.get('/orders', { params }),
+  getActiveOrders: () => axiosClient.get('/orders/active'),
   getOrderById: (id) => axiosClient.get(`/orders/${id}`),
-  getActiveTableOrder: (tableNumber) =>
-    axiosClient.get(`/orders/table/${tableNumber}/active`),
-  updateOrderStatus: (id, statusData) =>
-    axiosClient.put(`/orders/${id}/status`, statusData),
-  updateOrderPriority: (id, priority) =>
-    axiosClient.put(`/orders/${id}/priority`, { priority }),
+  markOrderReady: (id) => axiosClient.patch(`/orders/${id}/ready`),
+  settleOrder: (id, paymentMethod = 'cash') =>
+    axiosClient.patch(`/orders/${id}/settle`, { paymentMethod }),
 };
 
 export const paymentApi = {

@@ -2,18 +2,18 @@ const express = require('express');
 const router = express.Router();
 const {
   createOrder,
+  getActiveOrders,
+  markOrderReady,
+  settleOrder,
   getOrders,
   getOrderById,
-  getActiveTableOrder,
-  updateOrderStatus,
-  updateOrderPriority,
 } = require('../controllers/orderController');
 
 router.post('/', createOrder);
 router.get('/', getOrders);
-router.get('/table/:tableNumber/active', getActiveTableOrder);
+router.get('/active', getActiveOrders);
 router.get('/:id', getOrderById);
-router.put('/:id/status', updateOrderStatus);
-router.put('/:id/priority', updateOrderPriority);
+router.patch('/:id/ready', markOrderReady);
+router.patch('/:id/settle', settleOrder);
 
 module.exports = router;

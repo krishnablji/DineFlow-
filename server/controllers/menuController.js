@@ -1,6 +1,7 @@
 const MenuItem = require('../models/MenuItem');
 const Category = require('../models/Category');
 const { uploadStreamToCloudinary } = require('../config/cloudinary');
+const { emitItemStockUpdate } = require('../sockets/socketHandler');
 
 // @desc    Get all menu items with search, category & dietary tag filtering
 // @route   GET /api/menu
@@ -208,6 +209,38 @@ const getCategories = async (req, res, next) => {
   }
 };
 
+// @desc    Toggle menu item availability (Item 86 / Restock)
+// @route   PATCH /api/menu/:id/stock
+// @access  Public / Staff
+const toggleStockAvailability = async (req, res, next) => {
+  try {
+    const { isAvailable } = req.body;
+    const item = await MenuItem.findById(req.params.id);
+
+    if (!item) {
+      return res.status(404).json({ success: false, message: 'Menu item not found' });
+    }
+
+    item.isAvailable = typeof isAvailable === 'boolean' ? isAvailable : !item.isAvailable;
+    await item.save();
+
+    // Broadcast instantly to all Waiters, Kitchen, and Manager
+    emitItemStockUpdate({
+      itemId: item._id,
+      name: item.name,
+      isAvailable: item.isAvailable,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `"${item.name}" is now marked as ${item.isAvailable ? 'In Stock' : 'Out of Stock'}.`,
+      data: item,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getMenuItems,
   getMenuItemById,
@@ -216,4 +249,5 @@ module.exports = {
   deleteMenuItem,
   uploadMedia,
   getCategories,
+  toggleStockAvailability,
 };

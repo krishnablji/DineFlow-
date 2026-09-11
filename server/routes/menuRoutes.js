@@ -8,6 +8,7 @@ const {
   deleteMenuItem,
   uploadMedia,
   getCategories,
+  toggleStockAvailability,
 } = require('../controllers/menuController');
 const { protect, authorize } = require('../middleware/auth');
 const upload = require('../middleware/upload');
@@ -15,6 +16,7 @@ const upload = require('../middleware/upload');
 router.get('/', getMenuItems);
 router.get('/categories/all', getCategories);
 router.get('/:id', getMenuItemById);
+router.patch('/:id/stock', toggleStockAvailability);
 
 // Manager Protected Routes
 router.post('/', protect, authorize('manager'), createMenuItem);

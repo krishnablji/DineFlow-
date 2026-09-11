@@ -143,15 +143,15 @@ const getMe = async (req, res, next) => {
 // @access  Public
 const demoLogin = async (req, res, next) => {
   try {
-    const { role = 'customer', tableNumber = 4 } = req.body;
+    const { role = 'waiter', tableNumber = 4 } = req.body;
 
     let targetEmail;
     if (role === 'manager' || role === 'admin') {
-      targetEmail = 'admin@dineflow.com';
-    } else if (role === 'waiter' || role === 'kitchen') {
-      targetEmail = 'waiter@dineflow.com';
+      targetEmail = 'manager@dineflow.com';
+    } else if (role === 'kitchen') {
+      targetEmail = 'kitchen@dineflow.com';
     } else {
-      targetEmail = 'customer@dineflow.com';
+      targetEmail = 'waiter@dineflow.com';
     }
 
     let user = await User.findOne({ email: targetEmail });
@@ -159,18 +159,19 @@ const demoLogin = async (req, res, next) => {
     // Fallback: If seed hasn't run yet, auto-create demo user immediately
     if (!user) {
       const demoNames = {
-        'admin@dineflow.com': 'Elena Vance (Manager)',
-        'waiter@dineflow.com': 'Alex Waiter (Kitchen Staff)',
-        'customer@dineflow.com': `Demo Customer (Table ${tableNumber})`,
+        'manager@dineflow.com': 'Elena Vance (Manager)',
+        'kitchen@dineflow.com': 'Marco Bellini (Kitchen Head)',
+        'waiter@dineflow.com': 'Alex Rivera (Floor Waiter)',
       };
 
+      const roleNormalized = role === 'admin' ? 'manager' : role;
+
       user = await User.create({
-        name: demoNames[targetEmail] || 'Demo User',
+        name: demoNames[targetEmail] || 'Demo Staff',
         email: targetEmail,
         password: 'password123',
-        role: role === 'admin' ? 'manager' : role === 'kitchen' ? 'waiter' : role,
+        role: roleNormalized,
         isVerified: true,
-        assignedTables: role === 'waiter' ? [1, 2, 3, 4, 5, 6, 7, 8] : [],
       });
     }
 

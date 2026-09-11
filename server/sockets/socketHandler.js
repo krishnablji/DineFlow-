@@ -9,8 +9,13 @@ const initSocketHandler = (io) => {
     // Join role-specific or table-specific rooms
     socket.on('join_room', (data) => {
       const { role, tableNumber, userId } = data || {};
-      
-      if (role === 'waiter' || role === 'kitchen') {
+
+      if (role === 'waiter') {
+        socket.join('room_waiters');
+        console.log(`Socket ${socket.id} joined room_waiters`);
+      }
+
+      if (role === 'kitchen') {
         socket.join('room_kitchen');
         console.log(`Socket ${socket.id} joined room_kitchen`);
       }
@@ -18,6 +23,7 @@ const initSocketHandler = (io) => {
       if (role === 'manager') {
         socket.join('room_manager');
         socket.join('room_kitchen');
+        socket.join('room_waiters');
         console.log(`Socket ${socket.id} joined room_manager`);
       }
 
@@ -31,16 +37,6 @@ const initSocketHandler = (io) => {
       }
     });
 
-    // Handle waiter manually sending milestone update
-    socket.on('update_order_milestone', (data) => {
-      // Broadcast to kitchen and table
-      if (data && data.tableNumber) {
-        io.to(`table_${data.tableNumber}`).emit('serving_status_updated', data);
-      }
-      io.to('room_kitchen').emit('order_milestone_changed', data);
-      io.to('room_manager').emit('order_milestone_changed', data);
-    });
-
     socket.on('disconnect', () => {
       console.log(`[Socket.io] Client disconnected: ${socket.id}`);
     });
@@ -51,7 +47,7 @@ const getIO = () => {
   return ioInstance;
 };
 
-// Helper emitters
+// Broadcast new order to Kitchen Display & Manager
 const emitNewOrder = (order) => {
   if (!ioInstance) return;
   console.log(`[Socket.io] Broadcasting new_order #${order.orderNumber}`);
@@ -60,34 +56,40 @@ const emitNewOrder = (order) => {
   ioInstance.to(`table_${order.tableNumber}`).emit('order_placed', order);
 };
 
-const emitOrderStatusUpdate = (order) => {
+// Broadcast when Kitchen marks an order as Ready / Start Delivery
+const emitOrderReady = (order) => {
   if (!ioInstance) return;
-  console.log(`[Socket.io] Broadcasting order_status_updated #${order.orderNumber} -> ${order.servingStatus}`);
+  console.log(`[Socket.io] Broadcasting order_ready #${order.orderNumber}`);
+  // Alert all waiters so any available waiter can deliver the plate
+  ioInstance.to('room_waiters').emit('order_ready', order);
+  ioInstance.to('room_manager').emit('order_ready', order);
   ioInstance.to('room_kitchen').emit('order_status_updated', order);
-  ioInstance.to('room_manager').emit('order_status_updated', order);
   ioInstance.to(`table_${order.tableNumber}`).emit('serving_status_updated', order);
-  if (order.customerId) {
-    ioInstance.to(`user_${order.customerId}`).emit('serving_status_updated', order);
-  }
 };
 
-const emitTableStatusUpdate = (table) => {
+// Broadcast when an order is settled/paid
+const emitOrderSettled = (order) => {
   if (!ioInstance) return;
-  ioInstance.to('room_kitchen').emit('table_status_changed', table);
-  ioInstance.to('room_manager').emit('table_status_changed', table);
+  console.log(`[Socket.io] Broadcasting order_settled #${order.orderNumber}`);
+  ioInstance.to('room_manager').emit('order_settled', order);
+  ioInstance.to('room_waiters').emit('order_settled', order);
+  ioInstance.to('room_kitchen').emit('order_settled', order);
 };
 
-const emitStaffVerificationUpdate = (user) => {
+// Broadcast out-of-stock (Item 86) or restock events to ALL tablets
+const emitItemStockUpdate = (payload) => {
   if (!ioInstance) return;
-  ioInstance.to('room_manager').emit('staff_verification_updated', user);
-  ioInstance.to(`user_${user._id}`).emit('account_verified', user);
+  console.log(`[Socket.io] Broadcasting item_stock_updated:`, payload);
+  ioInstance.to('room_waiters').emit('item_stock_updated', payload);
+  ioInstance.to('room_kitchen').emit('item_stock_updated', payload);
+  ioInstance.to('room_manager').emit('item_stock_updated', payload);
 };
 
 module.exports = {
   initSocketHandler,
   getIO,
   emitNewOrder,
-  emitOrderStatusUpdate,
-  emitTableStatusUpdate,
-  emitStaffVerificationUpdate,
+  emitOrderReady,
+  emitOrderSettled,
+  emitItemStockUpdate,
 };
