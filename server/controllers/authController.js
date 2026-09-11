@@ -26,14 +26,14 @@ const register = async (req, res, next) => {
       });
     }
 
-    // Determine verification: waiters start unverified (pending approval queue)
-    const isVerified = role === 'waiter' ? false : true;
+    // Auto-verify retail tablet staff
+    const isVerified = true;
 
     const user = await User.create({
       name,
       email,
       password,
-      role: role || 'customer',
+      role: role || 'waiter',
       phone: phone || '',
       isVerified,
     });

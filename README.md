@@ -1,162 +1,181 @@
-# 🍽️ DineFlow — Real-Time Restaurant POS, Table Management & Dine-In Scheduling SaaS
+# 🍽️ DineFlow — High-Speed Local Wi-Fi Restaurant POS & Kitchen Display System
 
-> **A high-concurrency, full-stack MERN & Socket.io platform engineered for modern gourmet dining, interactive dish customization, kitchen dispatching, staff vetting, and executive revenue analytics.**
-
----
-
-## 🌟 Key Highlights & System Architecture
-
-DineFlow mirrors an LMS modular pipeline translated to high-volume hospitality management:
-- **Menu Categories** (Curriculum) ➔ Starters, Mains, Desserts, Beverages
-- **Dishes with Chef Video Teasers** (Interactive Lessons) ➔ High-res imagery, video playback, spice level selectors, and toppings
-- **Dish Customizations** (Quizzes/Assessments) ➔ Dynamic price add-ons, allergy flags, and custom chef instructions
-- **4-Stage Serving Pipeline** (Progress Engine) ➔ `Placed` ➔ `Prepping` ➔ `Ready to Serve` ➔ `Served`
-- **Staff Vetting Queue** (Instructor Verification) ➔ Manager approvals for newly signed-up waiters
-- **Manager Analytics** (Revenue & Performance Dashboard) ➔ Razorpay transaction volume, peak turnover hours, top-selling items
+> **A streamlined, high-speed MERN & Socket.io tablet POS and kitchen dispatch system engineered specifically for 10–15 table restaurants operating over local Wi-Fi.**
 
 ---
 
-## 🚀 1-Click Zero-Friction Demo Mode (Recruiter / Interview Ready)
+## 🌟 The 3 Operational Roles
 
-DineFlow includes an instant 1-Click Demo Launcher right on the navigation bar:
+DineFlow eliminates customer self-ordering and payment gateway complexity. Dedicated staff tablets operate across three distinct operational roles:
 
-| Role | Pre-configured Demo Profile | Credentials | Primary Capabilities |
+| Role | Route | Primary Device | Key Responsibilities & Capabilities |
 | :--- | :--- | :--- | :--- |
-| **Customer** | `Demo Customer (Table 4)` | `customer@dineflow.com` / `password123` | Digital QR Menu, Dish Video Player, Spice & Addon Customizer, Razorpay Test Checkout, Live 4-Stage Tracker |
-| **Kitchen / Waiter** | `Alex Waiter (Kitchen Staff)` | `waiter@dineflow.com` / `password123` | Real-time Kanban Dispatch Board, Priority Alerts (Urgent/Scheduled), 1-Click Milestone Advancement |
-| **Manager / Admin** | `Elena Vance (General Manager)` | `admin@dineflow.com` / `password123` | Staff Vetting Queue, Menu Studio (Media Uploads), Floor Plan & Table QR Manager, Sales & Revenue Analytics |
+| **Waiter** | `/waiter` | 10" Floor Tablet | • Table selector (Tables 1–15)<br>• High-touch `+` / `-` quantity adjusters for rapid entry<br>• Plain-text unformatted kitchen notes per item (e.g. "extra spicy, no cilantro")<br>• Table-wise sequential order IDs (`T04-#01`)<br>• Top notification banner for instant "Ready for Delivery" dish alerts |
+| **Kitchen** | `/kitchen` | Kitchen Wall Display (KDS) | • High-contrast dark tickets formatted with sequential IDs<br>• High-visibility bold chef notes<br>• Single-action transition: **"Start Delivery / Mark Ready"** (triggers waiter notification)<br>• **Item 86 (Out of Stock)** quick-toggle drawer syncing in real time |
+| **Manager** | `/manager` | Counter POS / Office Tablet | • **Panel 1: Inventory Restock Control** — 1-click 86/available toggle across all menu items<br>• **Panel 2: Daily Sales & Shift Summary Log** — Sequential order history, manual cash tally settlement, revenue totals |
 
 ---
 
 ## ⚡ Multi-Tab Real-Time Sync Showcase
 
-For interviewer live evaluation:
-1. Open **Tab 1** (`http://localhost:5173`) and switch to **Demo Customer (Table 4)**.
-2. Open **Tab 2** (`http://localhost:5173/kitchen`) in an adjacent window and switch to **Demo Waiter (Alex)**.
-3. In **Tab 1**, customize a dish, add to cart, and click **Pay via Razorpay**.
-4. Instantly observe **Tab 2** receive the order in the **New Orders** Kanban column with audio notification and badge updates via **Socket.io** without page refresh!
-5. In **Tab 2**, click **Accept & Prep** ➔ **Mark Ready**; watch **Tab 1**'s live 4-stage serving progress bar update dynamically in real time.
+Experience the entire dine-in operational loop locally across 3 browser tabs:
+
+```
++-------------------+       Socket.io Broadcast       +--------------------+
+|   Waiter Tablet   | ==============================> |   Kitchen Display  |
+|  (/waiter)        |      new_order: T04-#01         |     (/kitchen)     |
++-------------------+                                 +--------------------+
+         ^                                                       |
+         |               order_ready: T04-#01                    |
+         +=======================================================+
+                                 |
+                                 v
+                     +-----------------------+
+                     |    Manager Portal     |
+                     |  (/manager) Settle    |
+                     +-----------------------+
+```
+
+1. **Tab 1 — Waiter Tablet (`http://localhost:5173/waiter`):**
+   - Click **Demo Login: Waiter Tablet** (`waiter@dineflow.com`).
+   - Select **Table 04**, tap `+` on *Truffle Wild Mushroom Arancini* and *Wagyu Ribeye Steak*.
+   - In the plain-text note box, type: `Medium rare, sauce on the side`.
+   - Tap **Submit Order to Kitchen (T04-#01)**. The cart clears instantly for the next table.
+2. **Tab 2 — Kitchen KDS (`http://localhost:5173/kitchen`):**
+   - Click **Demo Login: Kitchen KDS** (`kitchen@dineflow.com`).
+   - The ticket for `T04-#01` appears immediately with the unformatted chef note highlighted in bold amber.
+   - Click **Item 86 (Out of Stock)** drawer to toggle any dish off — notice it reflects on Waiter tablets instantly.
+   - Click **"Ready for Delivery"** on the ticket.
+3. **Back to Tab 1 (Waiter Tablet):**
+   - A bright green alert banner instantly appears at the top:
+     **"Table T04: Order T04-#01 is Ready for Delivery!"** with a 1-tap dismiss button.
+4. **Tab 3 — Manager Portal (`http://localhost:5173/manager`):**
+   - Click **Demo Login: Manager Portal** (`manager@dineflow.com`).
+   - Check **Daily Sales & Summary Log** to see active and settled tickets.
+   - Tap **"Mark Settled (Cash Received)"** once the waiter tallies and collects the bill.
+
+---
+
+## 🏷️ Table-Wise Sequential Order Numbering
+
+Unlike opaque global IDs (e.g. `DF-9821`), DineFlow uses atomic per-table sequential numbering reset daily:
+- **Format:** `T<TableNumber>-#<OrderNumber>`
+- **Example:** Table 4 placing its first round gets `T04-#01`. A second round of drinks/desserts gets `T04-#02`.
+- **Implementation:** Backed by MongoDB's atomic `$inc` operation via `TableOrderCounter` schema, eliminating race conditions even when multiple staff members submit orders simultaneously over the local network.
 
 ---
 
 ## 🛠️ Technology Stack
 
 ### Frontend (`/client`)
-- **Framework**: React 18 with Vite
-- **Styling**: Tailwind CSS with custom Dark Gastronomy & Obsidian Glassmorphism theme
-- **State Management**: Zustand & React Context
+- **Framework**: React 18 with Vite (Ultra-fast HMR and lightweight bundle)
+- **Styling**: Tailwind CSS with Obsidian & Dark Slate high-contrast themes for bright kitchen environments
+- **State & Real-Time**: Socket.io-client with dedicated rooms (`room_waiters`, `room_kitchen`, `room_manager`)
 - **Icons**: Lucide React
-- **Real-Time Client**: Socket.io-client
-- **HTTP Client**: Axios with JWT request/response interceptors
-- **Payments**: Razorpay Checkout SDK + Smart Test Mode Simulator fallback
+- **HTTP Client**: Axios with JWT authorization headers
 
 ### Backend (`/server`)
 - **Runtime**: Node.js & Express.js
-- **Real-Time Gateway**: Socket.io (with room channels: `room_kitchen`, `room_manager`, `table_<id>`)
 - **Database**: MongoDB with Mongoose ODM
-- **Authentication**: JWT (JSON Web Tokens) with RBAC (`customer`, `waiter`, `manager`) and staff verification guards
-- **Payments**: Official Razorpay Node SDK with SHA256 HMAC signature verification
-- **Media Storage**: Multer with Cloudinary integration & memory buffer streaming
+- **Real-Time Engine**: Socket.io in-memory rooms
+- **Authentication**: JWT with Role-Based Access Control (`waiter`, `kitchen`, `manager`)
+- **Data Counter**: Atomic per-table daily session counter (`TableOrderCounter`)
 
 ---
 
 ## 📁 Repository Directory Structure
 
 ```
-DineFlow/
+DineFlow-/
 ├── client/
 │   ├── src/
-│   │   ├── api/             # Axios client and REST API endpoints
+│   │   ├── api/apiServices.js         # API endpoints for orders, menu, stock, and analytics
 │   │   ├── components/
-│   │   │   ├── common/      # Navbar, 1-Click DemoLoginBar, Modals, Badges
-│   │   │   ├── customer/    # MenuCard, DishModal, CartDrawer, LiveTracker, TableSelect
-│   │   │   ├── waiter/      # KanbanBoard, OrderCard, TableGrid
-│   │   │   └── manager/     # AnalyticsDashboard, StaffVettingQueue, MenuStudio, TableManager
-│   │   ├── context/         # AuthContext and SocketContext
-│   │   ├── pages/           # LandingPage, CustomerMenu, KitchenKanban, ManagerPortal, LoginPage
-│   │   ├── store/           # Zustand cart & live active order stores
-│   │   └── index.css        # Tailwind & custom glow/animations
+│   │   │   ├── common/                # Navbar, DemoLoginBar, ProtectedRoute
+│   │   │   ├── waiter/                # Waiter tablet components
+│   │   │   ├── kitchen/               # KDS tickets & Item 86 drawer
+│   │   │   └── manager/               # Inventory restock & Sales summary panels
+│   │   ├── context/
+│   │   │   ├── AuthContext.jsx        # RBAC auth state (waiter, kitchen, manager)
+│   │   │   └── SocketContext.jsx      # Socket.io connection & room subscriptions
+│   │   ├── pages/
+│   │   │   ├── WaiterTablet.jsx       # 1-15 Table grid, + / - counters, raw notes, banner
+│   │   │   ├── KitchenKanban.jsx      # KDS order tickets & 1-tap 86 drawer
+│   │   │   ├── ManagerPortal.jsx      # Panel 1: Inventory 86 | Panel 2: Sales Log
+│   │   │   ├── LoginPage.jsx          # Role-based login and staff registration
+│   │   │   └── LandingPage.jsx        # Staff overview and system navigation
+│   │   ├── App.jsx                    # Route switch & role guards
+│   │   └── index.css                  # High-contrast touch styles
 │   └── vite.config.js
 │
 ├── server/
-│   ├── config/              # MongoDB and Cloudinary connections
-│   ├── controllers/         # Auth, Users, Menu, Tables, Orders, Payments, Analytics
-│   ├── middleware/          # JWT auth, role validation, file upload, error handling
-│   ├── models/              # User, Table, Category, MenuItem, Order schemas
-│   ├── routes/              # Express API routers
-│   ├── seed/                # Full database seeder (16+ dishes, 8 tables, orders, users)
-│   ├── sockets/             # Socket.io room events and dispatch broadcasting
-│   └── server.js            # Express application bootstrapper
+│   ├── config/db.js                   # MongoDB connection
+│   ├── controllers/
+│   │   ├── authController.js          # Staff auth & registration
+│   │   ├── orderController.js         # Atomic sequential order creation & lifecycle
+│   │   ├── menuController.js          # Menu fetching & 1-click stock 86 toggle
+│   │   └── analyticsController.js     # Manager 2-panel sales & stock reporting
+│   ├── models/
+│   │   ├── User.js                    # Staff schema (role: waiter | kitchen | manager)
+│   │   ├── TableOrderCounter.js       # Atomic daily sequential counter per table
+│   │   ├── Order.js                   # Sequential IDs (T04-#01), items, raw notes
+│   │   └── MenuItem.js                # Dishes, prices, categories, stock availability
+│   ├── routes/                        # Express API route declarations
+│   ├── seed/seeder.js                 # Complete restaurant seeder (dishes, staff, orders)
+│   ├── sockets/socketHandler.js       # room_waiters, room_kitchen, room_manager events
+│   └── server.js                      # Express & Socket.io server bootstrap
 │
-└── package.json             # Root monorepo orchestrator
+└── package.json                       # Monorepo root orchestrator
 ```
 
 ---
 
-## ⚙️ Quick Start & Local Installation
-
-### Prerequisites
-- Node.js >= 18.x
-- MongoDB (Local instance or MongoDB Atlas URI)
+## ⚙️ Quick Start & Local Setup
 
 ### 1. Clone & Install Dependencies
 ```bash
 git clone https://github.com/krishnablji/DineFlow-.git
 cd DineFlow-
 
-# Install root, backend, and frontend packages
+# Install root, backend, and frontend dependencies
 npm run install-all
 ```
 
 ### 2. Configure Environment Variables
-Copy `.env.example` in `/server`:
-```bash
-cd server
-cp .env.example .env
-```
-Populate `.env` with your credentials:
+Create `.env` in `/server`:
 ```env
 PORT=5000
 NODE_ENV=development
 CLIENT_URL=http://localhost:5173
 MONGO_URI=mongodb://localhost:27017/dineflow
-JWT_SECRET=your_super_secret_jwt_key_dineflow_2026
-RAZORPAY_KEY_ID=rzp_test_yourKeyId
-RAZORPAY_KEY_SECRET=yourRazorpaySecret
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
+JWT_SECRET=dineflow_retail_pos_secret_2026
 ```
 
-### 3. Seed Gourmet Database
+### 3. Seed Restaurant Database
+Populates initial staff accounts, 16 dishes across 4 categories, and realistic sequential orders:
 ```bash
 npm run seed
 ```
-This populates:
-- 3 pre-registered demo accounts (`customer@dineflow.com`, `waiter@dineflow.com`, `admin@dineflow.com`)
-- 8 restaurant dining tables
-- 16+ gourmet dishes across Starters, Mains, Desserts, and Beverages with chef teaser videos & customizations
-- 25+ realistic historical orders to populate manager analytics charts
 
-### 4. Launch Application
+#### Pre-configured Staff Credentials:
+- **Waiter Tablet**: `waiter@dineflow.com` / `password123`
+- **Kitchen KDS**: `kitchen@dineflow.com` / `password123`
+- **Manager Portal**: `manager@dineflow.com` / `password123`
+
+*(Tip: You can also click any of the 3 quick login buttons in the top Demo Bar in the browser).*
+
+### 4. Run Development Servers
 ```bash
-# From the root directory:
+# Starts both Express backend (port 5000) and Vite frontend (port 5173)
 npm run dev
 ```
-- Client runs on `http://localhost:5173`
-- Backend API & Socket.io server runs on `http://localhost:5000`
 
----
-
-## 🧪 Database Models Overview
-
-- **User**: Name, Email, Password, Role (`customer`, `waiter`, `manager`), `isVerified` (waiter verification queue flag), Avatar.
-- **Table**: `tableNumber`, `capacity`, `status` (`available`, `occupied`, `reserved`), `qrCodeUrl`.
-- **Category**: Name, Slug, Description, DisplayOrder.
-- **MenuItem**: Title, Category, Price, Description, `imageUrl`, `videoUrl`, `dietaryTags` (`veg`, `vegan`, `gluten-free`, `non-veg`, `chef-special`), `customizations` (spice levels, priced extras, notes), `isAvailable`, `prepTimeMinutes`.
-- **Order**: `orderNumber`, `tableNumber`, `items` (with chosen spice & extras), `totalAmount`, `paymentStatus` (`pending`, `paid`, `cash_on_delivery`), `razorpayOrderId`, `servingStatus` (`placed`, `prepping`, `ready`, `served`), `priority` (`normal`, `urgent`, `scheduled`), `scheduledTime`, `timeline`.
+Open your browser to:
+- `http://localhost:5173` (redirects directly to `/waiter` tablet mode)
+- `http://localhost:5173/kitchen` (Kitchen Display System)
+- `http://localhost:5173/manager` (Manager Portal)
 
 ---
 
 ## 📄 License
-This project is licensed under the MIT License.
+MIT License. Built for seamless tablet-first restaurant operations.

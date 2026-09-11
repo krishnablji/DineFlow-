@@ -408,30 +408,28 @@ const seedData = async () => {
     }
 
     console.log('[Seeder] Seeding 25+ Realistic Historical Orders for Manager Analytics...');
-    const customerUser = users.find((u) => u.email === 'customer@dineflow.com');
     const waiterUser = users.find((u) => u.email === 'waiter@dineflow.com');
+    const kitchenUser = users.find((u) => u.email === 'kitchen@dineflow.com');
 
-    // Create past orders across multiple days & peak dining hours (12:00, 13:00, 19:00, 20:00, 21:00)
+    // Create past orders across multiple days & peak dining hours
     const historicalOrders = [];
     const sampleItems = [
-      { dish: menuItems[0], qty: 2, spice: 'Medium', addons: [{ name: 'Extra Shaved Truffle', price: 180 }] },
-      { dish: menuItems[4], qty: 1, spice: 'Medium', addons: [{ name: 'Truffle Mashed Potatoes', price: 120 }] },
-      { dish: menuItems[9], qty: 2, spice: 'Mild', addons: [{ name: 'Extra Scoop Bourbon Gelato', price: 90 }] },
-      { dish: menuItems[12], qty: 2, spice: 'Mild', addons: [] },
-      { dish: menuItems[6], qty: 1, spice: 'Mild', addons: [{ name: 'Double Shaved Truffle', price: 200 }] },
-      { dish: menuItems[7], qty: 1, spice: 'Medium', addons: [{ name: 'Cognac Peppercorn Sauce', price: 100 }] },
-      { dish: menuItems[1], qty: 1, spice: 'Hot', addons: [{ name: 'Extra Saffron Aioli', price: 50 }] },
-      { dish: menuItems[13], qty: 2, spice: 'Mild', addons: [] },
+      { dish: menuItems[0], qty: 2, note: 'Extra spicy, well done' },
+      { dish: menuItems[4], qty: 1, note: 'No onion, less oil' },
+      { dish: menuItems[9], qty: 2, note: 'Serve cold' },
+      { dish: menuItems[12], qty: 2, note: '' },
+      { dish: menuItems[6], qty: 1, note: 'Extra dip on side' },
+      { dish: menuItems[7], qty: 1, note: 'Medium rare' },
+      { dish: menuItems[1], qty: 1, note: 'Extra crisp' },
+      { dish: menuItems[13], qty: 2, note: 'Less sugar' },
     ];
 
     const now = Date.now();
     for (let i = 1; i <= 28; i++) {
-      // Pick random table and random time in last 5 days
-      const tableNum = (i % 8) + 1;
-      const hoursAgo = (i * 3) + Math.floor(Math.random() * 5);
+      const tableNum = (i % 15) + 1;
+      const hoursAgo = (i * 2) + Math.floor(Math.random() * 3);
       const orderDate = new Date(now - hoursAgo * 3600 * 1000);
 
-      // Select 2-3 items
       const selected = [
         sampleItems[i % sampleItems.length],
         sampleItems[(i + 2) % sampleItems.length],
@@ -439,54 +437,39 @@ const seedData = async () => {
 
       let subtotal = 0;
       const orderItems = selected.map((s) => {
-        const addonTotal = s.addons.reduce((sum, a) => sum + a.price, 0);
-        const itemTotal = (s.dish.price + addonTotal) * s.qty;
+        const itemTotal = s.dish.price * s.qty;
         subtotal += itemTotal;
         return {
           menuItemId: s.dish._id,
           name: s.dish.name,
           price: s.dish.price,
           quantity: s.qty,
-          spiceLevel: s.spice,
-          addons: s.addons,
-          specialInstructions: 'Chef preparation requested',
+          kitchenNote: s.note,
+          specialInstructions: s.note,
           itemTotal,
         };
       });
 
       const tax = Math.round(subtotal * 0.05);
-      const serviceFee = Math.round(subtotal * 0.02);
-      const totalAmount = subtotal + tax + serviceFee;
-
-      const servingStatus = i <= 2 ? 'prepping' : i === 3 ? 'ready' : 'served';
+      const totalAmount = subtotal + tax;
+      const servingStatus = i <= 3 ? 'ready' : 'settled';
 
       historicalOrders.push({
-        orderNumber: `DF-${1000 + i}`,
+        orderNumber: `T${String(tableNum).padStart(2, '0')}-#${String((i % 4) + 1).padStart(2, '0')}`,
         tableNumber: tableNum,
-        customerId: customerUser._id,
-        customerName: i % 2 === 0 ? 'David Miller' : `Dining Guest ${i}`,
-        customerPhone: '+1 555-0112',
-        waiterId: waiterUser._id,
+        waiterId: waiterUser ? waiterUser._id : null,
+        waiterName: 'Alex Rivera (Floor Staff)',
         items: orderItems,
         subtotal,
         tax,
-        serviceFee,
         totalAmount,
         paymentStatus: 'paid',
-        paymentMethod: 'razorpay',
-        razorpayOrderId: `order_historical_${i}`,
-        razorpayPaymentId: `pay_historical_${i}`,
         servingStatus,
-        priority: i % 4 === 0 ? 'urgent' : i % 5 === 0 ? 'scheduled' : 'normal',
-        scheduledTime: 'Immediate',
         timeline: [
-          { status: 'placed', timestamp: orderDate, note: 'Order placed', updatedBy: 'Customer' },
-          { status: 'prepping', timestamp: new Date(orderDate.getTime() + 5 * 60000), note: 'Kitchen started prep', updatedBy: 'Alex Waiter' },
-          ...(servingStatus === 'ready' || servingStatus === 'served'
-            ? [{ status: 'ready', timestamp: new Date(orderDate.getTime() + 18 * 60000), note: 'Dishes plated', updatedBy: 'Alex Waiter' }]
-            : []),
-          ...(servingStatus === 'served'
-            ? [{ status: 'served', timestamp: new Date(orderDate.getTime() + 22 * 60000), note: 'Delivered to table', updatedBy: 'Alex Waiter' }]
+          { status: 'placed', timestamp: orderDate, note: 'Order placed at table', updatedBy: 'Alex Rivera (Waiter)' },
+          { status: 'ready', timestamp: new Date(orderDate.getTime() + 15 * 60000), note: 'Kitchen marked ready', updatedBy: 'Marco (Kitchen)' },
+          ...(servingStatus === 'settled'
+            ? [{ status: 'settled', timestamp: new Date(orderDate.getTime() + 30 * 60000), note: 'Bill settled', updatedBy: 'Staff' }]
             : []),
         ],
         createdAt: orderDate,
@@ -499,12 +482,12 @@ const seedData = async () => {
     console.log('=====================================================');
     console.log('🎉 SEED COMPLETED SUCCESSFULLY!');
     console.log('=====================================================');
-    console.log('⭐ Demo Accounts Created:');
-    console.log('  1. Manager: admin@dineflow.com / password123');
-    console.log('  2. Waiter:  waiter@dineflow.com / password123');
-    console.log('  3. Customer: customer@dineflow.com / password123');
-    console.log(`⭐ Gourmet Dishes: ${menuItems.length} items`);
-    console.log(`⭐ Restaurant Tables: ${tables.length} tables with QR codes`);
+    console.log('⭐ Dedicated Retail Staff Accounts Created:');
+    console.log('  1. Manager: manager@dineflow.com / password123');
+    console.log('  2. Kitchen: kitchen@dineflow.com / password123');
+    console.log('  3. Waiter:  waiter@dineflow.com / password123');
+    console.log(`⭐ Menu Dishes: ${menuItems.length} items`);
+    console.log(`⭐ Restaurant Tables: ${tables.length} tables (1 to 15)`);
     console.log(`⭐ Orders Seeded: ${historicalOrders.length} orders`);
     console.log('=====================================================');
 

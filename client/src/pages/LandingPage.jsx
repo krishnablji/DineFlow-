@@ -63,52 +63,52 @@ const LandingPage = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-2">
-            {/* Customer Role Launch */}
+            {/* Waiter Role Launch */}
             <button
-              onClick={() => handleLaunchDemo('customer', 4, '/menu')}
-              className="p-4 rounded-2xl bg-dark-900 border border-dark-700 hover:border-gold-500/60 hover:bg-dark-800 transition-all text-left group shadow-sm flex flex-col justify-between"
+              onClick={() => handleLaunchDemo('waiter', 4, '/waiter')}
+              className="p-4 rounded-2xl bg-dark-900 border border-dark-700 hover:border-amber-500/60 hover:bg-dark-800 transition-all text-left group shadow-sm flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-2xl">🍔</span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-gold-500/20 text-gold-300 border border-gold-500/30">
-                    Table #4
+                  <span className="text-2xl">📱</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    Floor Staff
                   </span>
                 </div>
-                <h4 className="text-sm font-bold text-slate-100 group-hover:text-gold-400 transition-colors mt-2">
-                  Customer Experience
+                <h4 className="text-sm font-bold text-slate-100 group-hover:text-amber-400 transition-colors mt-2">
+                  Waiter Tablet (/waiter)
                 </h4>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Video menu, spice selectors, Razorpay checkout, live 4-stage tracker.
+                  High-touch quantity buttons, table selector (1-15), unformatted notes, ready alert banner.
                 </p>
               </div>
-              <div className="mt-4 text-xs font-bold text-gold-400 flex items-center gap-1">
-                <span>Launch View</span>
+              <div className="mt-4 text-xs font-bold text-amber-400 flex items-center gap-1">
+                <span>Launch Tablet</span>
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
               </div>
             </button>
 
-            {/* Waiter Role Launch */}
+            {/* Kitchen Role Launch */}
             <button
-              onClick={() => handleLaunchDemo('waiter', 4, '/kitchen')}
+              onClick={() => handleLaunchDemo('kitchen', 4, '/kitchen')}
               className="p-4 rounded-2xl bg-dark-900 border border-dark-700 hover:border-emerald-500/60 hover:bg-dark-800 transition-all text-left group shadow-sm flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between">
                   <ChefHat className="w-6 h-6 text-emerald-400" />
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    Staff
+                    Cooks
                   </span>
                 </div>
                 <h4 className="text-sm font-bold text-slate-100 group-hover:text-emerald-400 transition-colors mt-2">
-                  Kitchen Dispatch
+                  Kitchen Display (/kitchen)
                 </h4>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Real-time Kanban board, urgent priority alerts, 1-click status advances.
+                  Table-wise IDs (T04-#01), bold notes, single-action Start Delivery, Item 86 toggle.
                 </p>
               </div>
               <div className="mt-4 text-xs font-bold text-emerald-400 flex items-center gap-1">
-                <span>Launch View</span>
+                <span>Launch KDS</span>
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
               </div>
             </button>
@@ -126,14 +126,14 @@ const LandingPage = () => {
                   </span>
                 </div>
                 <h4 className="text-sm font-bold text-slate-100 group-hover:text-blue-400 transition-colors mt-2">
-                  Manager Portal
+                  Manager Portal (/manager)
                 </h4>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Revenue analytics, peak hours turnover charts, staff vetting queue.
+                  Strictly 2 panels: Inventory Restock Control & Daily Sales Summary.
                 </p>
               </div>
               <div className="mt-4 text-xs font-bold text-blue-400 flex items-center gap-1">
-                <span>Launch View</span>
+                <span>Launch Portal</span>
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
               </div>
             </button>
@@ -147,21 +147,21 @@ const LandingPage = () => {
           <div className="text-center space-y-2">
             <h3 className="font-serif text-2xl font-bold text-slate-100 flex items-center justify-center gap-2">
               <Radio className="w-6 h-6 text-gold-400 animate-pulse" />
-              <span>Multi-Tab Real-Time Sync Interview Showcase</span>
+              <span>Multi-Tab Real-Time Sync Showcase</span>
             </h3>
             <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto">
-              Follow these 4 steps to experience zero-latency bidirectional synchronization across customer and staff views:
+              Follow these 4 steps to experience zero-latency bidirectional synchronization across Waiter, Kitchen, and Manager tablets:
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div className="p-4 rounded-2xl bg-dark-900/80 border border-dark-700 space-y-2">
-              <div className="w-7 h-7 rounded-lg bg-gold-500/20 text-gold-400 font-bold text-xs flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 font-bold text-xs flex items-center justify-center">
                 1
               </div>
-              <h4 className="text-xs font-bold text-slate-200">Open Tab 1 (Customer)</h4>
+              <h4 className="text-xs font-bold text-slate-200">Tab 1: Waiter Tablet</h4>
               <p className="text-[11px] text-slate-400">
-                Click Demo Customer (Table 4) to enter the interactive digital menu.
+                Open /waiter, select Table 4, add dishes, and write raw notes.
               </p>
             </div>
 
@@ -169,9 +169,9 @@ const LandingPage = () => {
               <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 font-bold text-xs flex items-center justify-center">
                 2
               </div>
-              <h4 className="text-xs font-bold text-slate-200">Open Tab 2 (Kitchen)</h4>
+              <h4 className="text-xs font-bold text-slate-200">Tab 2: Kitchen KDS</h4>
               <p className="text-[11px] text-slate-400">
-                In another window/tab, launch the Waiter Kanban Dispatch Board.
+                Open /kitchen to receive ticket T04-#01 instantly with bold notes.
               </p>
             </div>
 
@@ -179,6 +179,22 @@ const LandingPage = () => {
               <div className="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-400 font-bold text-xs flex items-center justify-center">
                 3
               </div>
+              <h4 className="text-xs font-bold text-slate-200">Start Delivery</h4>
+              <p className="text-[11px] text-slate-400">
+                Tap "Start Delivery" in kitchen; Tab 1 pops up the "Ready for Delivery" banner.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-dark-900/80 border border-dark-700 space-y-2">
+              <div className="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 font-bold text-xs flex items-center justify-center">
+                4
+              </div>
+              <h4 className="text-xs font-bold text-slate-200">Tab 3: Manager Restock</h4>
+              <p className="text-[11px] text-slate-400">
+                86 an item in kitchen; see it in manager restock panel, click restock, and watch waiter tablet re-enable it live.
+              </p>
+            </div>
+          </div>
               <h4 className="text-xs font-bold text-slate-200">Place Order in Tab 1</h4>
               <p className="text-[11px] text-slate-400">
                 Customize a dish & pay. Watch Tab 2 receive the order in real-time with audio alert!

@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   // 1-Click Demo Login
-  const demoLogin = async (role = 'customer', tableNumber = 4) => {
+  const demoLogin = async (role = 'waiter', tableNumber = 4) => {
     try {
       const res = await authApi.demoLogin(role, tableNumber);
       if (res.data.success) {
@@ -109,7 +109,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated: !!user,
         isManager: user?.role === 'manager',
         isWaiter: user?.role === 'waiter',
-        isCustomer: user?.role === 'customer',
+        isKitchen: user?.role === 'kitchen',
       }}
     >
       {children}
